@@ -16,9 +16,7 @@ export class Drug {
 }
 
 const STRATEGIES = {
-    [DrugType.MagicPill]: (drug) => {
-        // ne fait rien
-    },
+    [DrugType.MagicPill]: (drug) => {},
     [DrugType.HerbalTea]: (drug) => {
         drug.benefit += drug.expiresIn <= 0 ? 2 : 1;
         drug.expiresIn -= 1;
@@ -36,9 +34,6 @@ const STRATEGIES = {
     [DrugType.Dafalgan]: (drug) => {
         drug.benefit -= drug.expiresIn <= 0 ? 4 : 2;
         drug.expiresIn -= 1;
-        if (drug.benefit < 0) {
-            drug.benefit = 0;
-        }
     },
 };
 function defaultStrategy(drug) {
@@ -46,7 +41,7 @@ function defaultStrategy(drug) {
     drug.expiresIn -= 1;
 }
 
-function getUpdateStategy(name) {
+function getUpdateStrategy(name) {
     return STRATEGIES[name] || defaultStrategy;
 }
 export class Pharmacy {
@@ -57,69 +52,13 @@ export class Pharmacy {
     updateBenefitValue() {
         for (var i = 0; i < this.drugs.length; i++) {
             const currentDrug = this.drugs[i];
-            const updateFunc = getUpdateStategy(currentDrug.name);
+            const updateFunc = getUpdateStrategy(currentDrug.name);
             updateFunc(currentDrug);
             currentDrug.benefit = Math.min(
                 Math.max(currentDrug.benefit, 0),
                 50,
             );
         }
-        return this.drugs;
-    }
-
-    /** @deprecated */
-    updateBenefitValueOld() {
-        for (var i = 0; i < this.drugs.length; i++) {
-            const currentDrug = this.drugs[i];
-            if (
-                currentDrug.name != DrugType.HerbalTea &&
-                currentDrug.name != DrugType.Fervex
-            ) {
-                if (currentDrug.benefit > 0) {
-                    if (currentDrug.name != DrugType.MagicPill) {
-                        currentDrug.benefit = currentDrug.benefit - 1;
-                    }
-                }
-            } else {
-                if (currentDrug.benefit < 50) {
-                    currentDrug.benefit = currentDrug.benefit + 1;
-                    if (currentDrug.name == DrugType.Fervex) {
-                        if (currentDrug.expiresIn < 11) {
-                            if (currentDrug.benefit < 50) {
-                                currentDrug.benefit = currentDrug.benefit + 1;
-                            }
-                        }
-                        if (currentDrug.expiresIn < 6) {
-                            if (currentDrug.benefit < 50) {
-                                currentDrug.benefit = currentDrug.benefit + 1;
-                            }
-                        }
-                    }
-                }
-            }
-            if (currentDrug.name != DrugType.MagicPill) {
-                currentDrug.expiresIn = currentDrug.expiresIn - 1;
-            }
-            if (currentDrug.expiresIn < 0) {
-                if (currentDrug.name != DrugType.HerbalTea) {
-                    if (currentDrug.name != DrugType.Fervex) {
-                        if (currentDrug.benefit > 0) {
-                            if (currentDrug.name != DrugType.MagicPill) {
-                                currentDrug.benefit = currentDrug.benefit - 1;
-                            }
-                        }
-                    } else {
-                        currentDrug.benefit =
-                            currentDrug.benefit - currentDrug.benefit;
-                    }
-                } else {
-                    if (currentDrug.benefit < 50) {
-                        currentDrug.benefit = currentDrug.benefit + 1;
-                    }
-                }
-            }
-        }
-
         return this.drugs;
     }
 }
