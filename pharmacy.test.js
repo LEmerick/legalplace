@@ -17,7 +17,7 @@ describe("Pharmacy", () => {
         //Object.keys(DrugType)) {
         it(`test new method vs old method for ${t}`, () => {
             const testD = new Drug(t, 15, 3);
-            const testDrug = Pharmacy.createDrugFactory(t, 15, 3);
+            const testDrug = new Drug(t, 15, 3);
 
             const pharmacy = new Pharmacy([testD]);
             const pharmacy2 = new Pharmacy([testDrug]);
@@ -32,16 +32,8 @@ describe("Pharmacy", () => {
     /** test dafalgan */
     it("degrades in Benefit twice as fast as normal drugs", () => {
         const start = 2;
-        const normalDrug = Pharmacy.createDrugFactory(
-            DrugType.NormalDrug,
-            15,
-            start,
-        );
-        const dafalgan = Pharmacy.createDrugFactory(
-            DrugType.Dafalgan,
-            normalDrug.expiresIn,
-            start,
-        );
+        const normalDrug = new Drug(DrugType.NormalDrug, 15, start);
+        const dafalgan = new Drug(DrugType.Dafalgan, 15, start);
         const pharmacy = new Pharmacy([normalDrug, dafalgan]);
 
         // dafa

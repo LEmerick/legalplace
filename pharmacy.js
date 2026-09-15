@@ -4,6 +4,7 @@ export const DrugType = {
     MagicPill: "Magic Pill",
     Dafalgan: "Dafalgan",
     NormalDrug: "Normal Drug",
+    Doliprane: "Doliprane",
 };
 
 export class Drug {
@@ -12,118 +13,56 @@ export class Drug {
         this.expiresIn = expiresIn;
         this.benefit = benefit;
     }
+}
 
-    /**
-     * @virtual
-     */
-    update() {
-        this.expiresIn = this.expiresIn - 1;
-        if (this.benefit > 50) {
-            this.benefit = 50;
-        } else if (this.benefit <= 0) {
-            this.benefit = 0;
-        } else if (this.expiresIn < 0) {
-            this.benefit = 0;
+const STRATEGIES = {
+    [DrugType.MagicPill]: (drug) => {
+        // ne fait rien
+    },
+    [DrugType.HerbalTea]: (drug) => {
+        drug.benefit += drug.expiresIn <= 0 ? 2 : 1;
+        drug.expiresIn -= 1;
+    },
+    [DrugType.Fervex]: (drug) => {
+        if (drug.expiresIn <= 0) {
+            drug.benefit = 0;
         } else {
-            this.benefit = this.benefit - 1;
+            drug.benefit += 1;
+            if (drug.expiresIn <= 10) drug.benefit += 1;
+            if (drug.expiresIn <= 5) drug.benefit += 1;
         }
-
-        return this;
-    }
+        drug.expiresIn -= 1;
+    },
+    [DrugType.Dafalgan]: (drug) => {
+        drug.benefit -= drug.expiresIn <= 0 ? 4 : 2;
+        drug.expiresIn -= 1;
+        if (drug.benefit < 0) {
+            drug.benefit = 0;
+        }
+    },
+};
+function defaultStrategy(drug) {
+    drug.benefit -= drug.expiresIn <= 0 ? 2 : 1;
+    drug.expiresIn -= 1;
 }
 
-class HerbalTea extends Drug {
-    constructor(expiresIn, benefit) {
-        super(DrugType.HerbalTea, expiresIn, benefit);
-    }
-    update() {
-        if (this.benefit < 50) {
-            this.benefit = this.benefit + 1;
-        }
-        this.expiresIn = this.expiresIn - 1;
-
-        if (this.expiresIn < 0) {
-            if (this.benefit < 50) {
-                this.benefit = this.benefit + 1;
-            }
-        }
-
-        return this;
-    }
+function getUpdateStategy(name) {
+    return STRATEGIES[name] || defaultStrategy;
 }
-class Fervex extends Drug {
-    constructor(expiresIn, benefit) {
-        super(DrugType.Fervex, expiresIn, benefit);
-    }
-    update() {
-        if (this.benefit < 50) {
-            this.benefit = this.benefit + 1;
-            if (this.expiresIn < 11) {
-                this.benefit = this.benefit + 1;
-            }
-            if (this.expiresIn < 6) {
-                this.benefit = this.benefit + 1;
-            }
-        }
-        this.expiresIn = this.expiresIn - 1;
-
-        if (this.expiresIn < 0) {
-            this.benefit = this.benefit - this.benefit;
-        }
-
-        return this;
-    }
-}
-class MagicPill extends Drug {
-    constructor(expiresIn, benefit) {
-        super(DrugType.MagicPill, expiresIn, benefit);
-    }
-
-    update() {
-        return this;
-    }
-}
-class Dafalgan extends Drug {
-    constructor(expiresIn, benefit) {
-        super(DrugType.Dafalgan, expiresIn, benefit);
-    }
-
-    update() {
-        this.benefit = this.benefit - 1;
-        return super.update();
-    }
-}
-
 export class Pharmacy {
     constructor(drugs = []) {
         this.drugs = drugs;
     }
 
-    /**
-     *
-     * @param {keyof DrugType} name
-     * @param {*} expiresIn
-     * @param {*} benefit
-     * @returns
-     */
-    static createDrugFactory(name, expiresIn, benefit) {
-        switch (name) {
-            case DrugType.HerbalTea:
-                return new HerbalTea(expiresIn, benefit);
-            case DrugType.Fervex:
-                return new Fervex(expiresIn, benefit);
-            case DrugType.MagicPill:
-                return new MagicPill(expiresIn, benefit);
-            case DrugType.Dafalgan:
-                return new Dafalgan(expiresIn, benefit);
-        }
-        return new Drug(name, expiresIn, benefit);
-    }
-
     updateBenefitValue() {
         for (var i = 0; i < this.drugs.length; i++) {
             const currentDrug = this.drugs[i];
-            currentDrug.update();
+            const updateFunc = getUpdateStategy(currentDrug.name);
+            updateFunc(currentDrug);
+            currentDrug.benefit = Math.min(
+                Math.max(currentDrug.benefit, 0),
+                50,
+            );
         }
         return this.drugs;
     }
